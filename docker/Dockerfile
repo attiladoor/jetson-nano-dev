@@ -1,4 +1,5 @@
-FROM ubuntu:18.04
+ARG BASE
+FROM ${BASE}
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
@@ -39,19 +40,21 @@ RUN apt-get install -y \
     libc-dev
 
 ARG REALSENSE_VERSION="v2.45.0-cpack"
+ARG ENABLE_REALSENSE_CUDA
+ARG ARCH
 
 RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attiladoor/librealsense && \
     cd librealsense && mkdir build && cd build && \
     cmake \
         -DCMAKE_BUILD_TYPE=release \
-        -DBUILD_EXAMPLES=true \
+        -DBUILD_EXAMPLES=${ENABLE_REALSENSE_CUDA} \
         -DBUILD_GRAPHICAL_EXAMPLES=false \
         -DBUILD_WITH_CUDA=false \
         ../ && \
     make -j$(nproc) && \
     make install && \
     cpack && \
-    cp librealsense2-0.1.1-Linux.deb /opt/ && \
+    cp librealsense2-0.1.1-Linux.deb /opt/librealsense2-${REALSENSE_VERSION}-${ARCH}.deb && \
     cd /opt && \
     rm -rf /opt/librealsense
 
@@ -69,6 +72,8 @@ WORKDIR /opt
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
 ARG OPENCV_VERSION="4.4.0"
+ARG ENABLE_OPENCV_CUDA
+ARG ARCH
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -96,6 +101,30 @@ RUN apt-get update && \
 
 RUN pip3 install numpy
 
+
+# Setup cuda repo and install cuda toolkit
+RUN if [ $ENABLE_OPENCV_CUDA = "true" ]; then \
+        wget https://storage.gra.cloud.ovh.net/v1/AUTH_6f9e6316c2ce4d37af5c8100c6660301/visys/jetpack4.4/cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb && \
+        wget https://storage.gra.cloud.ovh.net/v1/AUTH_6f9e6316c2ce4d37af5c8100c6660301/visys/jetpack4.4/libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb && \
+        dpkg -i cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb && \
+        apt-key add /var/cuda-repo-10-2-local-10.2.89/*.pub &&  \
+        apt-get update && \
+        apt-get install cuda-cudart-10-2 cuda-curand-10-2 libcublas10 cuda-toolkit-10-2 -y && \
+        rm -rf *.deb && \
+        ln -s /usr/local/cuda-10.2 /usr/local/cuda && \
+        rm -rf /var/lib/apt/lists/* \
+    ;fi
+
+RUN if [ $ENABLE_OPENCV_CUDA = "true" ]; then \
+        /bin/sh -c echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
+        echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig \
+    ;fi
+
+# OpenCV looks for the cuDNN version in cudnn_version.h, but it's been renamed to cudnn_version_v8.h
+RUN if [ $ENABLE_OPENCV_CUDA = "true" ]; then \
+        ln -s /usr/include/aarch64-linux-gnu/cudnn_version_v8.h /usr/include/aarch64-linux-gnu/cudnn_version.h \
+    ;fi
+
 RUN git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv.git && \
     git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv_contrib.git
 
@@ -111,11 +140,12 @@ RUN cd opencv && \
         -D CMAKE_INSTALL_PREFIX=/usr/local \
         -D CUDA_ARCH_BIN=5.3,6.2,7.2 \
         -D CUDA_ARCH_PTX= \
-        -D CUDA_FAST_MATH=OFF \
+        -D CUDA_FAST_MATH=${ENABLE_OPENCV_CUDA} \
         -D OPENCV_ENABLE_NONFREE=ON \
         -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
         -D OPENCV_GENERATE_PKGCONFIG=ON \
-        -D WITH_CUDA=OFF \
+        -D WITH_CUDA=${ENABLE_OPENCV_CUDA} \
+        -D CUDNN_INCLUDE_DIR=/usr/include/aarch64-linux-gnu \
         -D WITH_GSTREAMER=ON \
         -D WITH_LIBV4L=ON \
 	    -D WITH_IPP=OFF \
@@ -128,8 +158,8 @@ RUN cd opencv/build && make -j$(nproc)
 RUN cd opencv/build && make install
 RUN cd opencv/build && make package
 
-RUN cd opencv/build && tar -czvf OpenCV-${OPENCV_VERSION}-aarch64.tar.gz *.deb && \
-    cp OpenCV-${OPENCV_VERSION}-aarch64.tar.gz /opt && rm -rf /opt/opencv && rm -rf /opt/opencv_contrib
+RUN cd opencv/build && tar -czvf OpenCV-${OPENCV_VERSION}-${ARCH}.tar.gz *.deb && \
+    cp OpenCV-${OPENCV_VERSION}-${ARCH}.tar.gz /opt && rm -rf /opt/opencv && rm -rf /opt/opencv_contrib
 
 
 RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
@@ -139,7 +169,5 @@ RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
     cmake ../ && \
     make -j$(nproc) && \
     make install && \
-    cd / && \
+    cd /opt/ && \
     rm -rf cpp-mjpeg-streamer
-
-
