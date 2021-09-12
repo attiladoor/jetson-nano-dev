@@ -1,21 +1,25 @@
-#FROM nvidia/cuda-arm64:11.0.3-devel-ubuntu18.04
 FROM nvcr.io/nvidia/l4t-base:r32.6.1
-#FROM nvcr.io/nvidia/deepstream-l4t:5.1-21.02-base
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get install -y \
-    build-essential git cmake \
-    software-properties-common
+        build-essential  \
+        cmake \
+        software-properties-common \
+        tar \
+        python3-dev \
+        python3-numpy \
+        python3-distutils \
+        python3-setuptools \
+        wget \
+        git \
+        unzip
 
 RUN apt-get update && \
     apt-get -qq install -y \
-        wget \
-        unzip \
         libtbb2 \
         libtbb-dev && \
     apt-get -qq install -y \
-        git \
         pkg-config \
         libjpeg8-dev \
         libtiff-dev \
@@ -34,11 +38,6 @@ RUN apt-get update && \
         libglib2.0-0 \
         libgl1-mesa-glx
 
-# RUN apt-get install -y udev libusb-1.0.0-dev && \
-#    echo "deb https://librealsense.intel.com/Debian/apt-repo bionic main" >> /etc/apt/sources.list && \
-#    apt-get update --allow-unauthenticated --allow-insecure-repositories && \
-#    apt-get install -y --allow-unauthenticated librealsense2-udev-rule=2.23.0
-
 RUN apt-get install -y \
     musl-dev \
     libffi-dev \
@@ -51,24 +50,20 @@ RUN apt-get install -y \
     libxi-dev \
     libc-dev
 
-RUN cd /root &&  git clone https://github.com/IntelRealSense/librealsense.git && \
-    cd librealsense && mkdir build && cd build && \
-    cmake ../ -DCMAKE_C_FLAGS="-D_BSD_SOURCE -D_GNU_SOURCE -Wno-pedantic -DMAX_INPUT=255" \
-             -DCMAKE_CXX_FLAGS="-D_BSD_SOURCE -D_GNU_SOURCE -Wno-pedantic -DMAX_INPUT=255" \
-             -DCMAKE_PREFIX_PATH=/opt/apriltag/current/ \
-             -DCMAKE_INSTALL_PREFIX=/opt/librealsense/$RS_VERSION \
-             -DBUILD_GRAPHICAL_EXAMPLES=OFF \
-             -DFORCE_RSUSB_BACKEND=ON \
-             -DBUILD_WITH_CUDA=true \
-             -DBUILD_EXAMPLES=true \
-             -DCMAKE_BUILD_TYPE=Release  && \
-    make -j16 all install && \
-    cd /opt/librealsense/ && ln -s $RS_VERSION /opt/librealsense/current && \
-    echo "/lib:/usr/local/lib:/usr/lib" >>/etc/ld-musl-$(uname -m).path && \
-    echo "/opt/apriltag/current/lib64" >>/etc/ld-musl-$(uname -m).path && \
-    echo "/opt/librealsense/current/lib64" >>/etc/ld-musl-$(uname -m).path && \
-    true
+ARG REALSENSE_VERSION="v2.45.0-cpack"
 
+RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attiladoor/librealsense && \
+    cd librealsense && mkdir build && cd build && \
+    cmake ../ -DBUILD_EXAMPLES=true -DBUILD_GRAPHICAL_EXAMPLES=false -DBUILD_WITH_CUDA=true && \
+    make -j$(nproc) && \
+    make install && \
+    cpack && \
+    cp librealsense2-0.1.1-Linux.deb /opt/ && \
+    cd /opt && \
+    rm -rf /opt/librealsense
+
+# Build and install OpenCV 4.4
+#
 # setup environment
 #
 ENV DEBIAN_FRONTEND=noninteractive
@@ -77,25 +72,15 @@ ENV PATH="/usr/local/cuda/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 WORKDIR /opt
 
-
-#
+# Source:
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
 ARG OPENCV_VERSION="4.4.0"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential \
-	   gfortran \
-        cmake \
-        git \
-	   file \
-	   tar \
-	   python3-pip \
-	   python3-dev \
-	   python3-numpy \
-	   python3-distutils \
-	   python3-setuptools \
+	    gfortran \
+ 	    file \
         libatlas-base-dev \
         libavcodec-dev \
         libavformat-dev \
@@ -125,8 +110,8 @@ RUN apt-get update && \
         libxine2-dev \
         libxvidcore-dev \
         libx264-dev \
-	   libgtkglext1 \
-	   libgtkglext1-dev \
+	    libgtkglext1 \
+	    libgtkglext1-dev \
         pkg-config \
         qv4l2 \
         v4l-utils \
@@ -137,6 +122,7 @@ RUN apt-get update && \
 
 RUN pip3 install numpy
 
+# Setup cuda repo and install cuda toolkit
 RUN wget https://storage.gra.cloud.ovh.net/v1/AUTH_6f9e6316c2ce4d37af5c8100c6660301/visys/jetpack4.4/cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb && \
     wget https://storage.gra.cloud.ovh.net/v1/AUTH_6f9e6316c2ce4d37af5c8100c6660301/visys/jetpack4.4/libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb && \
     dpkg -i cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb && \
@@ -184,8 +170,8 @@ RUN cd opencv && \
         -D WITH_GSTREAMER=ON \
         -D WITH_LIBV4L=ON \
         -D WITH_OPENGL=ON \
-	   -D WITH_OPENCL=OFF \
-	   -D WITH_IPP=OFF \
+	    -D WITH_OPENCL=OFF \
+	    -D WITH_IPP=OFF \
         -D WITH_TBB=ON \
 	   -D BUILD_TIFF=ON \
 	   -D BUILD_PERF_TESTS=OFF \
@@ -198,3 +184,16 @@ RUN cd opencv/build && make package
 
 RUN cd opencv/build && tar -czvf OpenCV-${OPENCV_VERSION}-aarch64.tar.gz *.deb && \
     cp OpenCV-${OPENCV_VERSION}-aarch64.tar.gz /opt && rm -rf /opt/opencv && rm -rf /opt/opencv_contrib
+
+
+RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
+    cd cpp-mjpeg-streamer && \
+    mkdir build && \
+    cd build && \
+    cmake ../ && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && \
+    rm -rf cpp-mjpeg-streamer
+
+
