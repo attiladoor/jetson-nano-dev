@@ -99,14 +99,17 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-RUN pip3 install numpy
-
-
 # Setup cuda repo and install cuda toolkit
-RUN if [ $ENABLE_OPENCV_CUDA = "true" ]; then \
+# Add to enable cuddnn
+# wget https://storage.gra.cloud.ovh.net/v1/AUTH_6f9e6316c2ce4d37af5c8100c6660301/visys/jetpack4.4/libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb
+# apt-get isntall libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb
+# OpenCV looks for the cuDNN version in cudnn_version.h, but it's been renamed to cudnn_version_v8.h
+# RUN if [ ${ENABLE_OPENCV_CUDA} = "ON" ]; then \
+#         ln -s /usr/include/aarch64-linux-gnu/cudnn_version_v8.h /usr/include/aarch64-linux-gnu/cudnn_version.h \
+#     ;fi
+RUN if [ ${ENABLE_OPENCV_CUDA} = "ON" ]; then \
         wget https://storage.gra.cloud.ovh.net/v1/AUTH_6f9e6316c2ce4d37af5c8100c6660301/visys/jetpack4.4/cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb && \
-        wget https://storage.gra.cloud.ovh.net/v1/AUTH_6f9e6316c2ce4d37af5c8100c6660301/visys/jetpack4.4/libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb && \
-        dpkg -i cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb && \
+        dpkg -i cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb && \
         apt-key add /var/cuda-repo-10-2-local-10.2.89/*.pub &&  \
         apt-get update && \
         apt-get install cuda-cudart-10-2 cuda-curand-10-2 libcublas10 cuda-toolkit-10-2 -y && \
@@ -115,14 +118,9 @@ RUN if [ $ENABLE_OPENCV_CUDA = "true" ]; then \
         rm -rf /var/lib/apt/lists/* \
     ;fi
 
-RUN if [ $ENABLE_OPENCV_CUDA = "true" ]; then \
+RUN if [ ${ENABLE_OPENCV_CUDA} = "ON" ]; then \
         /bin/sh -c echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
         echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig \
-    ;fi
-
-# OpenCV looks for the cuDNN version in cudnn_version.h, but it's been renamed to cudnn_version_v8.h
-RUN if [ $ENABLE_OPENCV_CUDA = "true" ]; then \
-        ln -s /usr/include/aarch64-linux-gnu/cudnn_version_v8.h /usr/include/aarch64-linux-gnu/cudnn_version.h \
     ;fi
 
 RUN git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv.git && \
@@ -140,18 +138,18 @@ RUN cd opencv && \
         -D CMAKE_INSTALL_PREFIX=/usr/local \
         -D CUDA_ARCH_BIN=5.3,6.2,7.2 \
         -D CUDA_ARCH_PTX= \
+        -D WITH_CUDA=${ENABLE_OPENCV_CUDA} \
         -D CUDA_FAST_MATH=${ENABLE_OPENCV_CUDA} \
+        -D ENABLE_FAST_MATH=${ENABLE_OPENCV_CUDA} \
+        -D WITH_CUBLAS=${ENABLE_OPENCV_CUDA} \
         -D OPENCV_ENABLE_NONFREE=ON \
         -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
         -D OPENCV_GENERATE_PKGCONFIG=ON \
-        -D WITH_CUDA=${ENABLE_OPENCV_CUDA} \
-        -D CUDNN_INCLUDE_DIR=/usr/include/aarch64-linux-gnu \
         -D WITH_GSTREAMER=ON \
         -D WITH_LIBV4L=ON \
-	    -D WITH_IPP=OFF \
         -D WITH_TBB=ON \
-	    -D BUILD_PERF_TESTS=OFF \
-	    -D BUILD_TESTS=OFF \
+	-D BUILD_PERF_TESTS=OFF \
+	-D BUILD_TESTS=OFF \
 	   ../
 
 RUN cd opencv/build && make -j$(nproc)
