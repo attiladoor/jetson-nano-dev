@@ -1,11 +1,11 @@
 ARG BASE
 FROM ${BASE}
 ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /opt
 
 RUN apt-get update && \
     apt-get install -y \
         build-essential  \
-        cmake \
         software-properties-common \
         tar \
         python3-dev \
@@ -14,7 +14,8 @@ RUN apt-get update && \
         python3-setuptools \
         wget \
         git \
-        unzip
+        unzip \
+        gdb
 
 RUN apt-get update && \
     apt-get -qq install -y \
@@ -39,6 +40,17 @@ RUN apt-get install -y \
     libusb-dev \
     libc-dev
 
+# install a more recent cmake from source
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2.tar.gz && \
+    tar -zxvf cmake-3.20.2.tar.gz && \
+    cd cmake-3.20.2 && \
+    ./bootstrap && \
+    make -j$(nproc) && \
+    make install && \
+    rm -rf /opt/cmake*
+
+
+# install librealsense from source
 ARG REALSENSE_VERSION="v2.45.0-cpack"
 ARG ENABLE_REALSENSE_CUDA
 ARG ARCH
@@ -66,7 +78,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV CUDA_HOME="/usr/local/cuda"
 ENV PATH="/usr/local/cuda/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
-WORKDIR /opt
 
 # Source:
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
@@ -159,7 +170,7 @@ RUN cd opencv/build && make package
 RUN cd opencv/build && tar -czvf OpenCV-${OPENCV_VERSION}-${ARCH}.tar.gz *.deb && \
     cp OpenCV-${OPENCV_VERSION}-${ARCH}.tar.gz /opt && rm -rf /opt/opencv && rm -rf /opt/opencv_contrib
 
-
+# install jpeg streamer from source
 RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
     cd cpp-mjpeg-streamer && \
     mkdir build && \
@@ -169,3 +180,16 @@ RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
     make install && \
     cd /opt/ && \
     rm -rf cpp-mjpeg-streamer
+
+# Install boost from source
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.67.0/source/boost_1_67_0.tar.gz && \
+    tar -xzvf boost_1_67_0.tar.gz && \
+    cd boost_1_67_0 && \
+    ./bootstrap.sh && \
+    ./b2 install || true && \
+    cd ../ && \
+    rm -rf boost*
+
+# install mqtt broker
+RUN apt-get update && \
+    apt-get install -y mosquitto
