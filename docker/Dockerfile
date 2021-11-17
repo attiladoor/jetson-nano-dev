@@ -50,7 +50,7 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2
     rm -rf /opt/cmake*
 
 
-# install librealsense from source
+# install librealsense from source - only static libs
 ARG REALSENSE_VERSION="v2.45.0-cpack"
 ARG ENABLE_REALSENSE_CUDA
 ARG ARCH
@@ -59,9 +59,10 @@ RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attilad
     cd librealsense && mkdir build && cd build && \
     cmake \
         -DCMAKE_BUILD_TYPE=release \
-        -DBUILD_EXAMPLES=${ENABLE_REALSENSE_CUDA} \
+        -DBUILD_EXAMPLES=false \
         -DBUILD_GRAPHICAL_EXAMPLES=false \
         -DBUILD_WITH_CUDA=false \
+        -DBUILD_SHARED_LIBS=false \
         ../ && \
     make -j$(nproc) && \
     make install && \
@@ -70,7 +71,7 @@ RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attilad
     cd /opt && \
     rm -rf /opt/librealsense
 
-# Build and install OpenCV 4.4
+# Build and install OpenCV 4.4 - static library
 #
 # setup environment
 #
@@ -156,6 +157,7 @@ RUN cd opencv && \
         -D OPENCV_ENABLE_NONFREE=ON \
         -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
         -D OPENCV_GENERATE_PKGCONFIG=ON \
+        -D BUILD_SHARED_LIBS=OFF \
         -D WITH_GSTREAMER=ON \
         -D WITH_LIBV4L=ON \
         -D WITH_TBB=ON \
@@ -186,9 +188,7 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.67.0/source/boost_
     tar -xzvf boost_1_67_0.tar.gz && \
     cd boost_1_67_0 && \
     ./bootstrap.sh && \
-    ./b2 install link=static -j$(nproc) || true && \
-    cd ../ && \
-    rm -rf boost*
+    ./b2 install link=static -j$(nproc) || true
 
 # install mqtt broker
 RUN apt-get update && \
