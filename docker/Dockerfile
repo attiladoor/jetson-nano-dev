@@ -46,9 +46,7 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2
     cd cmake-3.20.2 && \
     ./bootstrap && \
     make -j$(nproc) && \
-    make install && \
-    rm -rf /opt/cmake*
-
+    make install
 
 # install librealsense from source - only static libs
 ARG REALSENSE_VERSION="v2.45.0-cpack"
@@ -65,11 +63,7 @@ RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attilad
         -DBUILD_SHARED_LIBS=false \
         ../ && \
     make -j$(nproc) && \
-    make install && \
-    cpack && \
-    cp librealsense2-0.1.1-Linux.deb /opt/librealsense2-${REALSENSE_VERSION}-${ARCH}.deb && \
-    cd /opt && \
-    rm -rf /opt/librealsense
+    make install
 
 # Build and install OpenCV 4.4 - static library
 #
@@ -169,9 +163,6 @@ RUN cd opencv/build && make -j$(nproc)
 RUN cd opencv/build && make install
 RUN cd opencv/build && make package
 
-RUN cd opencv/build && tar -czvf OpenCV-${OPENCV_VERSION}-${ARCH}.tar.gz *.deb && \
-    cp OpenCV-${OPENCV_VERSION}-${ARCH}.tar.gz /opt && rm -rf /opt/opencv && rm -rf /opt/opencv_contrib
-
 # install jpeg streamer from source
 RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
     cd cpp-mjpeg-streamer && \
@@ -180,8 +171,7 @@ RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
     cmake ../ && \
     make -j$(nproc) && \
     make install && \
-    cd /opt/ && \
-    rm -rf cpp-mjpeg-streamer
+    cd /opt/
 
 # Install boost from source
 RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.67.0/source/boost_1_67_0.tar.gz && \
@@ -193,3 +183,8 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.67.0/source/boost_
 # install mqtt broker
 RUN apt-get update && \
     apt-get install -y mosquitto
+
+RUN pip3 install paho-mqtt
+
+# cleanup
+RUN rm -rf /opt/*
