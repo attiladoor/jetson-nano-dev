@@ -178,7 +178,9 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.67.0/source/boost_
     tar -xzvf boost_1_67_0.tar.gz && \
     cd boost_1_67_0 && \
     ./bootstrap.sh && \
-    ./b2 install link=static -j$(nproc) || true
+    ./b2 install link=static -j$(nproc) || true  \
+    cd ../ && \
+    rm -rf boost*
 
 # install mqtt broker
 RUN apt-get update && \
