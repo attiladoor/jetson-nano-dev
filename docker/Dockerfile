@@ -59,8 +59,7 @@ RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attilad
         -DCMAKE_BUILD_TYPE=release \
         -DBUILD_EXAMPLES=false \
         -DBUILD_GRAPHICAL_EXAMPLES=false \
-        -DBUILD_WITH_CUDA=false \
-        -DBUILD_SHARED_LIBS=false \
+        -DBUILD_WITH_CUDA=${ENABLE_REALSENSE_CUDA} \
         ../ && \
     make -j$(nproc) && \
     make install
