@@ -46,7 +46,8 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2
     cd cmake-3.20.2 && \
     ./bootstrap && \
     make -j$(nproc) && \
-    make install
+    make install && \
+    rm -rf /opt/cmake*
 
 # install librealsense from source - only static libs
 ARG REALSENSE_VERSION="v2.45.0-cpack"
@@ -170,7 +171,7 @@ RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
     cmake ../ && \
     make -j$(nproc) && \
     make install && \
-    cd /opt/
+    rm -rf /opt/cpp-mjpeg-streamer
 
 # Install boost from source
 RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.67.0/source/boost_1_67_0.tar.gz && \
@@ -179,7 +180,7 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.67.0/source/boost_
     ./bootstrap.sh && \
     ./b2 install link=static -j$(nproc) || true  \
     cd ../ && \
-    rm -rf boost*
+    rm -rf /opt/boost*
 
 # install mqtt broker
 RUN apt-get update && \

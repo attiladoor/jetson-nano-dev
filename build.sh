@@ -3,13 +3,13 @@
 if [ $1 == "arm" ]
 then
     BASE="nvcr.io/nvidia/l4t-base:r32.6.1"
-    ENABLE_REALSENSE_CUDA="True"
+    ENABLE_REALSENSE_CUDA="true"
     ENABLE_OPENCV_CUDA="ON"
     ARCH="arm"
 elif [ $1 == "x86" ]
 then
     BASE="ubuntu:18.04"
-    ENABLE_REALSENSE_CUDA="False"
+    ENABLE_REALSENSE_CUDA="false"
     ENABLE_OPENCV_CUDA=="OFF"
     ARCH="x86"
 else
