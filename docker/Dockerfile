@@ -61,9 +61,14 @@ RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attilad
         -DBUILD_EXAMPLES=false \
         -DBUILD_GRAPHICAL_EXAMPLES=false \
         -DBUILD_WITH_CUDA=${ENABLE_REALSENSE_CUDA} \
+        -DCMAKE_CUDA_ARCHITECTURES="53" \
         ../ && \
     make -j$(nproc) && \
-    make install
+    make install && \
+    cpack && \
+    cp librealsense2-0.1.1-Linux.deb /opt/librealsense2-${REALSENSE_VERSION}-${ARCH}.deb && \
+    cd /opt && \
+    rm -rf /opt/librealsense
 
 # Build and install OpenCV 4.4 - static library
 #
@@ -119,7 +124,7 @@ RUN if [ ${ENABLE_OPENCV_CUDA} = "ON" ]; then \
         apt-key add /var/cuda-repo-10-2-local-10.2.89/*.pub &&  \
         apt-get update && \
         apt-get install cuda-cudart-10-2 cuda-curand-10-2 libcublas10 cuda-toolkit-10-2 -y && \
-        rm -rf *.deb && \
+        rm -rf cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb && \
         ln -s /usr/local/cuda-10.2 /usr/local/cuda && \
         rm -rf /var/lib/apt/lists/* \
     ;fi
@@ -151,7 +156,7 @@ RUN cd opencv && \
         -D OPENCV_ENABLE_NONFREE=ON \
         -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
         -D OPENCV_GENERATE_PKGCONFIG=ON \
-        -D BUILD_SHARED_LIBS=OFF \
+        -D BUILD_SHARED_LIBS=ON \
         -D WITH_GSTREAMER=ON \
         -D WITH_LIBV4L=ON \
         -D WITH_TBB=ON \
