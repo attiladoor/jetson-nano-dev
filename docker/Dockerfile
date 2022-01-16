@@ -168,6 +168,9 @@ RUN cd opencv/build && make -j$(nproc)
 RUN cd opencv/build && make install
 RUN cd opencv/build && make package
 
+RUN cd opencv/build && tar -czvf OpenCV-${OPENCV_VERSION}-${ARCH}.tar.gz *.deb && \
+    cp OpenCV-${OPENCV_VERSION}-${ARCH}.tar.gz /opt && rm -rf /opt/opencv && rm -rf /opt/opencv_contrib
+
 # install jpeg streamer from source
 RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
     cd cpp-mjpeg-streamer && \
