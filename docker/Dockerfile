@@ -196,5 +196,13 @@ RUN apt-get update && \
 
 RUN pip3 install paho-mqtt
 
-# cleanup
-RUN rm -rf /opt/*
+# install gtest
+RUN git clone https://github.com/google/googletest.git && \
+    cd googletest && \
+    mkdir build && cd build && \
+    cmake .. -DBUILD_SHARED_LIBS=ON -DINSTALL_GTEST=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd ../../ && \
+    rm -rf googletest
