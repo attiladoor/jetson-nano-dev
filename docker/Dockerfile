@@ -110,23 +110,13 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Setup cuda repo and install cuda toolkit
-# Add to enable cuddnn
-# wget https://storage.gra.cloud.ovh.net/v1/AUTH_6f9e6316c2ce4d37af5c8100c6660301/visys/jetpack4.4/libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb
-# apt-get isntall libcudnn8_8.0.0.180-1+cuda10.2_arm64.deb
-# OpenCV looks for the cuDNN version in cudnn_version.h, but it's been renamed to cudnn_version_v8.h
-# RUN if [ ${ENABLE_OPENCV_CUDA} = "ON" ]; then \
-#         ln -s /usr/include/aarch64-linux-gnu/cudnn_version_v8.h /usr/include/aarch64-linux-gnu/cudnn_version.h \
-#     ;fi
+
 RUN if [ ${ENABLE_OPENCV_CUDA} = "ON" ]; then \
-        wget https://storage.gra.cloud.ovh.net/v1/AUTH_6f9e6316c2ce4d37af5c8100c6660301/visys/jetpack4.4/cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb && \
-        dpkg -i cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb && \
-        apt-key add /var/cuda-repo-10-2-local-10.2.89/*.pub &&  \
+        apt-key adv --fetch-key https://repo.download.nvidia.com/jetson/jetson-ota-public.asc  && \
+        echo "deb https://repo.download.nvidia.com/jetson/common r32.6 main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
+        echo "deb https://repo.download.nvidia.com/jetson/t210 r32.6 main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
         apt-get update && \
-        apt-get install cuda-cudart-10-2 cuda-curand-10-2 libcublas10 cuda-toolkit-10-2 -y && \
-        rm -rf cuda-repo-l4t-10-2-local-10.2.89_1.0-1_arm64.deb && \
-        ln -s /usr/local/cuda-10.2 /usr/local/cuda && \
-        rm -rf /var/lib/apt/lists/* \
+        apt-get install -y cuda-toolkit-10-2 \
     ;fi
 
 RUN if [ ${ENABLE_OPENCV_CUDA} = "ON" ]; then \
