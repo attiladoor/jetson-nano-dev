@@ -19,7 +19,7 @@ fi
 
 CONTAINER_NAME="attiladoor/jetson-nano-dev-"
 
-DOCKER_BUILDKIT=1 docker build \
+docker build \
     --build-arg BASE=$BASE \
     --build-arg ENABLE_REALSENSE_CUDA=$REALSENSE_CUDA \
     --build-arg ENABLE_OPENCV_CUDA=$ENABLE_OPENCV_CUDA \
