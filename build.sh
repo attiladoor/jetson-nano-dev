@@ -1,16 +1,34 @@
-
+set -e
 
 if [ $1 == "arm" ]
 then
-    BASE="nvcr.io/nvidia/l4t-base:r32.6.1"
-    ENABLE_REALSENSE_CUDA="true"
-    ENABLE_OPENCV_CUDA="ON"
+    if [ $2 == "18" ]
+    then
+        BASE="nvcr.io/nvidia/l4t-base:r32.6.1"
+    elif [ $2 == "20" ]
+    then
+        BASE="arm64v8/ubuntu:20.04"
+    else
+        echo "Wrong ubuntu version:" $2
+        exit 1
+    fi
+    ENABLE_REALSENSE_CUDA="ON"
+    ENABLE_CUDA="ON"
     ARCH="arm"
 elif [ $1 == "x86" ]
 then
-    BASE="ubuntu:18.04"
-    ENABLE_REALSENSE_CUDA="false"
-    ENABLE_OPENCV_CUDA=="OFF"
+    if [ $2 == "18" ]
+    then
+        BASE="ubuntu:18.04"
+    elif [ $2 == "20" ]
+    then
+        BASE="ubuntu:20.04"
+    else
+        echo "Wrong ubuntu version:" $2
+        exit 1
+    fi
+    ENABLE_REALSENSE_CUDA="OFF"
+    ENABLE_CUDA="OFF"
     ARCH="x86"
 else
     echo "Wrong architecture:" $1
@@ -22,7 +40,7 @@ CONTAINER_NAME="attiladoor/jetson-nano-dev-"
 docker build \
     --build-arg BASE=$BASE \
     --build-arg ENABLE_REALSENSE_CUDA=$REALSENSE_CUDA \
-    --build-arg ENABLE_OPENCV_CUDA=$ENABLE_OPENCV_CUDA \
+    --build-arg ENABLE_CUDA=$ENABLE_CUDA \
     --build-arg ARCH=$ARCH \
-    --tag $CONTAINER_NAME$1 \
+    --tag $CONTAINER_NAME$1-$2 \
     --file docker/Dockerfile .

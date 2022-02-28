@@ -44,10 +44,31 @@ RUN apt-get install -y \
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2.tar.gz && \
     tar -zxvf cmake-3.20.2.tar.gz && \
     cd cmake-3.20.2 && \
-    ./bootstrap && \
+    ./bootstrap --parallel=$(nproc) && \
     make -j$(nproc) && \
     make install && \
     rm -rf /opt/cmake*
+
+
+ARG ENABLE_CUDA
+
+RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
+        apt-key adv --fetch-key https://repo.download.nvidia.com/jetson/jetson-ota-public.asc  && \
+        echo "deb https://repo.download.nvidia.com/jetson/common r32.6 main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
+        echo "deb https://repo.download.nvidia.com/jetson/t210 r32.6 main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
+        apt-get update && \
+        apt-get install -y cuda-toolkit-10-2 \
+    ;fi
+
+RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
+        /bin/sh -c echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
+        echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig \
+    ;fi
+
+# use gcc 8 becuase of the cuda compiler
+RUN apt-get install -y g++-8 gcc-8
+ENV CC="/usr/bin/gcc-8"
+ENV CXX="/usr/bin/g++-8"
 
 # install librealsense from source - only static libs
 ARG REALSENSE_VERSION="v2.45.0-cpack"
@@ -58,8 +79,8 @@ RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attilad
     cd librealsense && mkdir build && cd build && \
     cmake \
         -DCMAKE_BUILD_TYPE=release \
-        -DBUILD_EXAMPLES=false \
-        -DBUILD_GRAPHICAL_EXAMPLES=false \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_GRAPHICAL_EXAMPLES=OFF \
         -DBUILD_WITH_CUDA=${ENABLE_REALSENSE_CUDA} \
         -DCMAKE_CUDA_ARCHITECTURES="53" \
         ../ && \
@@ -83,7 +104,6 @@ ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
 ARG OPENCV_VERSION="4.4.0"
-ARG ENABLE_OPENCV_CUDA
 ARG ARCH
 
 RUN apt-get update && \
@@ -111,19 +131,6 @@ RUN apt-get update && \
     && apt-get clean
 
 
-RUN if [ ${ENABLE_OPENCV_CUDA} = "ON" ]; then \
-        apt-key adv --fetch-key https://repo.download.nvidia.com/jetson/jetson-ota-public.asc  && \
-        echo "deb https://repo.download.nvidia.com/jetson/common r32.6 main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
-        echo "deb https://repo.download.nvidia.com/jetson/t210 r32.6 main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
-        apt-get update && \
-        apt-get install -y cuda-toolkit-10-2 \
-    ;fi
-
-RUN if [ ${ENABLE_OPENCV_CUDA} = "ON" ]; then \
-        /bin/sh -c echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
-        echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig \
-    ;fi
-
 RUN git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv.git && \
     git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv_contrib.git
 
@@ -139,10 +146,10 @@ RUN cd opencv && \
         -D CMAKE_INSTALL_PREFIX=/usr/local \
         -D CUDA_ARCH_BIN=5.3,6.2,7.2 \
         -D CUDA_ARCH_PTX= \
-        -D WITH_CUDA=${ENABLE_OPENCV_CUDA} \
-        -D CUDA_FAST_MATH=${ENABLE_OPENCV_CUDA} \
-        -D ENABLE_FAST_MATH=${ENABLE_OPENCV_CUDA} \
-        -D WITH_CUBLAS=${ENABLE_OPENCV_CUDA} \
+        -D WITH_CUDA=${ENABLE_CUDA} \
+        -D CUDA_FAST_MATH=${ENABLE_CUDA} \
+        -D ENABLE_FAST_MATH=${ENABLE_CUDA} \
+        -D WITH_CUBLAS=${ENABLE_CUDA} \
         -D OPENCV_ENABLE_NONFREE=ON \
         -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
         -D OPENCV_GENERATE_PKGCONFIG=ON \
