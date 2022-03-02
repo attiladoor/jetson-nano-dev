@@ -12,7 +12,6 @@ then
         echo "Wrong ubuntu version:" $2
         exit 1
     fi
-    ENABLE_REALSENSE_CUDA="ON"
     ENABLE_CUDA="ON"
     ARCH="arm"
 elif [ $1 == "x86" ]
@@ -27,7 +26,6 @@ then
         echo "Wrong ubuntu version:" $2
         exit 1
     fi
-    ENABLE_REALSENSE_CUDA="OFF"
     ENABLE_CUDA="OFF"
     ARCH="x86"
 else
@@ -39,7 +37,6 @@ CONTAINER_NAME="attiladoor/jetson-nano-dev-"
 
 docker build \
     --build-arg BASE=$BASE \
-    --build-arg ENABLE_REALSENSE_CUDA=$REALSENSE_CUDA \
     --build-arg ENABLE_CUDA=$ENABLE_CUDA \
     --build-arg ARCH=$ARCH \
     --tag $CONTAINER_NAME$1-$2 \

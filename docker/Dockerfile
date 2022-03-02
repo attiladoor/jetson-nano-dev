@@ -50,6 +50,27 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2
     rm -rf /opt/cmake*
 
 
+# install librealsense from repo
+ENV REALSENSE_VERSION="2.45.0-5ubuntu5~1.gbpd5e775"
+
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE && \
+    add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo bionic main" -u && \
+    apt-get update && \
+    apt-get install -y -f librealsense2=${REALSENSE_VERSION} librealsense2-dev=${REALSENSE_VERSION}
+
+# Build and install OpenCV 4.4 - static library
+#
+# setup environment
+#
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CUDA_HOME="/usr/local/cuda"
+ENV PATH="/usr/local/cuda/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
+# use gcc 8 becuase of the cuda compiler
+RUN apt-get install -y g++-8 gcc-8
+ENV CC="/usr/bin/gcc-8"
+ENV CXX="/usr/bin/g++-8"
+
 ARG ENABLE_CUDA
 
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
@@ -64,41 +85,6 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
         /bin/sh -c echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
         echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig \
     ;fi
-
-# use gcc 8 becuase of the cuda compiler
-RUN apt-get install -y g++-8 gcc-8
-ENV CC="/usr/bin/gcc-8"
-ENV CXX="/usr/bin/g++-8"
-
-# install librealsense from source - only static libs
-ARG REALSENSE_VERSION="v2.45.0-cpack"
-ARG ENABLE_REALSENSE_CUDA
-ARG ARCH
-
-RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attiladoor/librealsense && \
-    cd librealsense && mkdir build && cd build && \
-    cmake \
-        -DCMAKE_BUILD_TYPE=release \
-        -DBUILD_EXAMPLES=OFF \
-        -DBUILD_GRAPHICAL_EXAMPLES=OFF \
-        -DBUILD_WITH_CUDA=${ENABLE_REALSENSE_CUDA} \
-        -DCMAKE_CUDA_ARCHITECTURES="53" \
-        ../ && \
-    make -j$(nproc) && \
-    make install && \
-    cpack && \
-    cp librealsense2-0.1.1-Linux.deb /opt/librealsense2-${REALSENSE_VERSION}-${ARCH}.deb && \
-    cd /opt && \
-    rm -rf /opt/librealsense
-
-# Build and install OpenCV 4.4 - static library
-#
-# setup environment
-#
-ENV DEBIAN_FRONTEND=noninteractive
-ENV CUDA_HOME="/usr/local/cuda"
-ENV PATH="/usr/local/cuda/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 
 # Source:
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
