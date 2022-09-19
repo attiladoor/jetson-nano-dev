@@ -51,7 +51,7 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2
 
 
 # install librealsense from repo
-ENV REALSENSE_VERSION="2.50.0-0~realsense0.6162"
+ENV REALSENSE_VERSION="2.50.0-0~realsense0*"
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE && \
     add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo bionic main" -u && \
