@@ -158,7 +158,6 @@ RUN cd opencv/build && tar -czvf OpenCV-${OPENCV_VERSION}-${ARCH}.tar.gz *.deb &
 # TODO: Remove patch branch and use master
 RUN git clone https://github.com/nadjieb/cpp-mjpeg-streamer.git && \
     cd cpp-mjpeg-streamer && \
-    git checkout limit-queue-size && \
     mkdir build && \
     cd build && \
     cmake ../ && \
