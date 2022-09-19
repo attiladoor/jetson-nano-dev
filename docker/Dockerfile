@@ -190,3 +190,7 @@ RUN git clone https://github.com/google/googletest.git && \
     ldconfig && \
     cd ../../ && \
     rm -rf googletest
+
+# install nodejs
+RUN apt-get update && \
+    apt-get install -y nodejs npm
