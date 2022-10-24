@@ -58,6 +58,9 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A0
     apt-get update && \
     apt-get install -y -f librealsense2=${REALSENSE_VERSION} librealsense2-dev=${REALSENSE_VERSION}
 
+ARG ARCH
+RUN if [ ${ARCH} = "x86" ]; then pip3 install pyrealsense2; fi
+
 # Build and install OpenCV 4.4 - static library
 #
 # setup environment
@@ -90,7 +93,6 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
 ARG OPENCV_VERSION="4.4.0"
-ARG ARCH
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
