@@ -1,13 +1,18 @@
 default: all
 
-arm-18:
+arm-18-build:
 	bash ./build.sh arm 18
-arm-20:
+arm-20-build:
 	bash ./build.sh arm 20
-x86-18:
-	bash ./build.sh x86 18
-x86-20:
-	bash ./build.sh x86 20
+x86-18-build:
+	bash ./build.sh x86 18 build
+x86-20-build:
+	bash ./build.sh x86 20 build
+x86-18-run: x86-18-build
+	bash ./build.sh x86 18 run
+x86-20-run: x86-20-build
+	bash ./build.sh x86 20 run
+
 all: arm-20 x86-20
 
 push-arm-18:
