@@ -58,9 +58,6 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A0
     apt-get update && \
     apt-get install -y -f librealsense2=${REALSENSE_VERSION} librealsense2-dev=${REALSENSE_VERSION}
 
-ARG ARCH
-RUN if [ ${ARCH} = "x86" ]; then pip3 install pyrealsense2; fi
-
 # Build and install OpenCV 4.4 - static library
 #
 # setup environment
@@ -176,23 +173,4 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.67.0/source/boost_
     cd ../ && \
     rm -rf /opt/boost*
 
-# install mqtt broker
-RUN apt-get update && \
-    apt-get install -y mosquitto
 
-RUN pip3 install paho-mqtt
-
-# install gtest
-RUN git clone https://github.com/google/googletest.git && \
-    cd googletest && \
-    mkdir build && cd build && \
-    cmake .. -DBUILD_SHARED_LIBS=ON -DINSTALL_GTEST=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr && \
-    make -j$(nproc) && \
-    make install && \
-    ldconfig && \
-    cd ../../ && \
-    rm -rf googletest
-
-# install nodejs
-RUN apt-get update && \
-    apt-get install -y nodejs npm
