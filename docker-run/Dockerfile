@@ -25,6 +25,3 @@ RUN apt-get update && \
 
 # install realsense python
 RUN pip3 install pyrealsense2
-
-# install tensorflow
-RUN pip3 install tensorflow
