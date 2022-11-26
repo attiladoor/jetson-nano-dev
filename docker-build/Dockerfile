@@ -172,5 +172,51 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.67.0/source/boost_
     ./b2 install link=static -j$(nproc) || true  \
     cd ../ && \
     rm -rf /opt/boost*
+    
+RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
+    apt-get update  && \
+    apt-get install -y libcudnn8-dev libnvinfer-dev libnvinfer-plugin-dev libnvparsers-dev && \
+    ln -fs $CC /usr/bin/gcc && \
+    ln -fs $CC /usr/bin/cc && \
+    ln -fs $CXX /usr/bin/g++ && \
+    ln -fs $CXX /usr/bin/c++ \
+    ;fi
+
+#https://stackoverflow.com/questions/65605972/cmake-unsupported-gnu-version-gcc-versions-later-than-8-are-not-supported
+#https://github.com/NVIDIA-AI-IOT/deepstream_tao_apps/blob/master/TRT-OSS/Jetson/README.md
+RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
+    apt-get install -y python && \
+    git clone --recurse-submodules -b release/8.2 https://github.com/nvidia/TensorRT TensorRT && \
+    cd TensorRT && \
+    cp parsers/onnx/NvOnnxParser.h /usr/include/aarch64-linux-gnu/ && \
+    mkdir build && cd build && \
+    cmake \
+    -DTRT_LIB_DIR=/usr/lib/aarch64-linux-gnu/ \
+    -DTRT_BIN_DIR=/opt/TensorRT/out \
+    -DCUDA_VERSION=10.2 \
+    -DGPU_ARCHS=53 \
+    .. && \
+    make nvinfer_plugin -j$(nproc) &&\
+    make nvonnxparser  -j$(nproc)  &&\
+    cp libnvinfer_plugin.so.8.2.3 /usr/lib/aarch64-linux-gnu/ && \
+    cp libnvonnxparser.so.8.2.3 /usr/lib/aarch64-linux-gnu/ && \
+    ldconfig && \
+    ln -s /lib/aarch64-linux-gnu/libnvonnxparser.so.8 /lib/aarch64-linux-gnu/libnvonnxparser.so && \
+    ldconfig \
+    ;fi
+    
+RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
+    apt-get install -y zlib1g-dev && \
+    git clone --recurse-submodules -j8 https://github.com/zerollzeng/tiny-tensorrt.git && \
+    cd tiny-tensorrt && \ 
+    mkdir build && cd build && \
+    cmake \
+    -DGPU_ARCH=53 \
+    -DBUILD_PYTHON=OFF \
+    -DBUILD_SAMPLE=OFF \
+    .. && make -j$(nproc) && \
+    make install \
+    ;fi
+    
 
 

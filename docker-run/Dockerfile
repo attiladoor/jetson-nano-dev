@@ -25,3 +25,5 @@ RUN apt-get update && \
 
 # install realsense python
 RUN pip3 install pyrealsense2
+
+RUN pip3 install onnxruntime-gpu onnx
