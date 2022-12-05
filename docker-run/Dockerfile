@@ -3,7 +3,7 @@ FROM ${BASE}
 
 # install mqtt broker
 RUN apt-get update && \
-    apt-get install -y mosquitto
+    apt-get install -y mosquitto gdb
 
 RUN pip3 install paho-mqtt
 
