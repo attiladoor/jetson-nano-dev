@@ -101,13 +101,18 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     ln -fs $CXX /usr/bin/c++ \
     ;fi
 
-ENV CC="/usr/bin/gcc-8"
-ENV CXX="/usr/bin/g++-8"
+RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
+    /bin/sh -c echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
+    echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig \
+    ;fi
+
 #https://stackoverflow.com/questions/65605972/cmake-unsupported-gnu-version-gcc-versions-later-than-8-are-not-supported
 #https://github.com/NVIDIA-AI-IOT/deepstream_tao_apps/blob/master/TRT-OSS/Jetson/README.md
-# todo remove pkg-config zlib1g-dev
+# TODO: remove unnecessary export
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
-    apt-get install -y python pkg-config zlib1g-dev && \
+    export CC="/usr/bin/gcc-8" && \
+    export CXX="/usr/bin/g++-8" && \
+    apt-get update && apt-get install -y python zlib1g-dev build-essential && \
     git clone --recurse-submodules -b release/8.2 https://github.com/nvidia/TensorRT TensorRT && \
     cd TensorRT && \
     cp parsers/onnx/NvOnnxParser.h /usr/include/aarch64-linux-gnu/ && \
@@ -124,11 +129,12 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     cp libnvonnxparser.so.8.2.3 /usr/lib/aarch64-linux-gnu/ && \
     ldconfig && \
     ln -s /lib/aarch64-linux-gnu/libnvonnxparser.so.8 /lib/aarch64-linux-gnu/libnvonnxparser.so && \
-    ldconfig \
+    ldconfig && \
+    rm -rf /opt/TensorRT \
     ;fi
 
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
-    apt-get install -y zlib1g-dev && \
+    apt-get install -y && \
     git clone --recurse-submodules -j8 https://github.com/zerollzeng/tiny-tensorrt.git && \
     cd tiny-tensorrt && \
     mkdir build && cd build && \
@@ -137,20 +143,23 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     -DBUILD_PYTHON=OFF \
     -DBUILD_SAMPLE=OFF \
     .. && make -j$(nproc) && \
-    make install \
+    make install && \
+    rm -rf tiny-tensorrt \
     ;fi
 
 # https://onnxruntime.ai/docs/build/eps.html#tensorrt
-RUN git clone --branch v1.13.1 --recursive -j$(nproc) https://github.com/Microsoft/onnxruntime.git && \
+RUN git clone --branch v1.11.0 --recursive -j$(nproc) https://github.com/Microsoft/onnxruntime.git && \
     cd onnxruntime && \
     if [ ${ENABLE_CUDA} = "ON" ]; then \
     ./build.sh --config Release --update --build --parallel \
-    --use_cuda --cuda_home /usr/local/cuda --cudnn_home /usr/lib/aarch64-linux-gnu \
+    --use_cuda --cuda_home /usr/local/cuda --cudnn_home /usr/lib/aarch64-linux-gnu --tensorrt_home /usr/lib/aarch64-linux-gnu --build_shared_lib \
     ;else \
     ./build.sh --config Release --build_shared_lib --parallel \
-    ;fi
+    ;fi && \
+    cd build/Linux/Release && \
+    make install && \
+    rm -rf /opt/onnxruntime
 
-############
 # install librealsense from repo
 ENV REALSENSE_VERSION="2.50.0-0~realsense0*"
 
@@ -160,13 +169,6 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A0
     apt-get install -y -f librealsense2=${REALSENSE_VERSION} librealsense2-dev=${REALSENSE_VERSION}
 
 # Build and install OpenCV 4.4 - static library
-
-
-RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
-    /bin/sh -c echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
-    echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig \
-    ;fi
-
 # Source:
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
