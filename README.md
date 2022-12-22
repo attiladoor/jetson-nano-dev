@@ -17,7 +17,19 @@ sudo apt-get install qemu binfmt-support qemu-user-static
 ```
 
 ## Variants
-
 * jetson-nano-dev-arm-20-build: default build environment
 * jetson-nano-dev-x86-20-build: x86 test environment with only CPU support to test algorithms locally
 * jetson-nano-dev-x86-20-run: runtime env based on the build container 
+
+## How to build
+```bash
+make build-all-20
+```
+
+## Docker-hub
+
+* https://hub.docker.com/r/attiladoor/jetson-nano-dev-arm-20-build
+* https://hub.docker.com/r/attiladoor/jetson-nano-dev-x86-20-build
+* https://hub.docker.com/r/attiladoor/jetson-nano-dev-x86-20-run
+
+See the corresponding release tags
