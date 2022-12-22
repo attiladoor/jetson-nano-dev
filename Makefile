@@ -1,9 +1,9 @@
 default: all
 
 arm-18-build:
-	bash ./build.sh build arm 18
+	bash ./build.sh build arm 18 build
 arm-20-build:
-	bash ./build.sh build arm 20
+	bash ./build.sh build arm 20 build
 x86-18-build:
 	bash ./build.sh build x86 18 build
 x86-20-build:

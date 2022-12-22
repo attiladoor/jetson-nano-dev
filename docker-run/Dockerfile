@@ -3,7 +3,7 @@ FROM ${BASE}
 
 # install mqtt broker
 RUN apt-get update && \
-    apt-get install -y mosquitto
+    apt-get install -y mosquitto gdb
 
 RUN pip3 install paho-mqtt
 
@@ -25,3 +25,5 @@ RUN apt-get update && \
 
 # install realsense python
 RUN pip3 install pyrealsense2
+
+RUN pip3 install onnxruntime-gpu onnx

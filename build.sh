@@ -6,6 +6,11 @@ ARCH=$2
 UBUNTU_VERSION=$3
 VARIANT_OPT=$4
 
+if [ -z $VERSION ]
+then
+    VERSION=latest
+fi
+
 if [ $ARCH == "arm" ]
 then
     # if [ ! -z $VARIANT_OPT ]
@@ -26,6 +31,7 @@ then
     fi
     ENABLE_CUDA="ON"
     DOCKER_FILE="docker-build/Dockerfile"
+    VARIANT_TAG="-build"
 elif [ $ARCH == "x86" ]
 then
     if [ $UBUNTU_VERSION == "18" ]
@@ -60,11 +66,6 @@ then
 else
     echo "Wrong architecture:" $ARCH
     exit 1
-fi
-
-if [ -z $VERSION ]
-then
-    VERSION=latest
 fi
 
 if [[ $DOCKER_COMMAND == "build" ]]
