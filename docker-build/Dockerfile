@@ -54,7 +54,7 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     mkdir -p /opt/nvidia/l4t-packages/ && \
     touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall && \
     apt-get -qq update && \
-    apt-get install --no-install-recommends  -o Dpkg::Options::="--force-overwrite" -y \
+    apt-get install --no-install-recommends  -o Dpkg::Options::="--force-overwrite" -o Dpkg::Options::="--force-confdef" -y \
     nvidia-l4t-core \
     nvidia-l4t-multimedia \
     nvidia-l4t-multimedia-utils \
