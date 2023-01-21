@@ -68,9 +68,9 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     ;fi
 
 # install a more recent cmake from source
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2.tar.gz && \
-    tar -zxvf cmake-3.20.2.tar.gz && \
-    cd cmake-3.20.2 && \
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.23.3/cmake-3.23.3.tar.gz && \
+    tar -zxvf cmake-3.23.3.tar.gz && \
+    cd cmake-3.23.3 && \
     ./bootstrap --parallel=$(nproc) && \
     make -j$(nproc) && \
     make install && \
@@ -148,6 +148,8 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     ;fi
 
 # https://onnxruntime.ai/docs/build/eps.html#tensorrt
+# onnxruntime cannot be built currently with "--use_tensorrt" flag. TODO: find a proper tenorrt + onnxruntime combination
+# at the moment please use the "tiny-tensorrt" library as wrapper
 RUN git clone --branch v1.11.0 --recursive -j$(nproc) https://github.com/Microsoft/onnxruntime.git && \
     cd onnxruntime && \
     if [ ${ENABLE_CUDA} = "ON" ]; then \
