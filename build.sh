@@ -70,7 +70,7 @@ fi
 
 if [[ $DOCKER_COMMAND == "build" ]]
 then
-    docker buildx build \
+    docker buildx build  \
         --build-arg BASE=$BASE \
         --build-arg ENABLE_CUDA=$ENABLE_CUDA \
         --build-arg ARCH=$ARCH \
