@@ -3,9 +3,9 @@ Docker build environment based on ubuntu 20.04 meant for computer vision / ML ap
 
 ### Content
 The following packages are installed:
-* CMake 3.20
-* OpenCV 4.4 with GPU support
-* Librealsense 2.50 with GPU support (from repo)
+* CMake 3.23
+* OpenCV 4.7 with GPU support
+* Librealsense 2.53 with GPU support (from repo)
 * Cuda toolkit 10.2
 * TensorRT: 8.2
 * Tiny tensor: TensorRT wrapper
