@@ -54,7 +54,7 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     mkdir -p /opt/nvidia/l4t-packages/ && \
     touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall && \
     apt-get -qq update && \
-    apt-get install --no-install-recommends  -o Dpkg::Options::="--force-overwrite" -y \
+    apt-get install --no-install-recommends  -o Dpkg::Options::="--force-overwrite" -o Dpkg::Options::="--force-confdef" -y \
     nvidia-l4t-core \
     nvidia-l4t-multimedia \
     nvidia-l4t-multimedia-utils \
@@ -68,9 +68,9 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     ;fi
 
 # install a more recent cmake from source
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2.tar.gz && \
-    tar -zxvf cmake-3.20.2.tar.gz && \
-    cd cmake-3.20.2 && \
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.23.3/cmake-3.23.3.tar.gz && \
+    tar -zxvf cmake-3.23.3.tar.gz && \
+    cd cmake-3.23.3 && \
     ./bootstrap --parallel=$(nproc) && \
     make -j$(nproc) && \
     make install && \
@@ -90,7 +90,7 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     apt-get update  && \
     apt-get install -y g++-8 gcc-8 && \
-    apt-get install -y cuda-toolkit-10-2 libcudnn8-dev libnvinfer-dev libnvinfer-plugin-dev libnvparsers-dev && \
+    apt-get install -y cuda-toolkit-10-2 tensorrt &&\
     export CC="/usr/bin/gcc-8" && \
     export CXX="/usr/bin/g++-8" && \
     echo "CC=/usr/bin/gcc-8" >> /etc/environment && \
@@ -106,33 +106,6 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig \
     ;fi
 
-#https://stackoverflow.com/questions/65605972/cmake-unsupported-gnu-version-gcc-versions-later-than-8-are-not-supported
-#https://github.com/NVIDIA-AI-IOT/deepstream_tao_apps/blob/master/TRT-OSS/Jetson/README.md
-# TODO: remove unnecessary export
-RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
-    export CC="/usr/bin/gcc-8" && \
-    export CXX="/usr/bin/g++-8" && \
-    apt-get update && apt-get install -y python zlib1g-dev build-essential && \
-    git clone --recurse-submodules -b release/8.2 https://github.com/nvidia/TensorRT TensorRT && \
-    cd TensorRT && \
-    cp parsers/onnx/NvOnnxParser.h /usr/include/aarch64-linux-gnu/ && \
-    mkdir build && cd build && \
-    cmake \
-    -DTRT_LIB_DIR=/usr/lib/aarch64-linux-gnu/ \
-    -DTRT_BIN_DIR=/opt/TensorRT/out \
-    -DCUDA_VERSION=10.2 \
-    -DGPU_ARCHS=53 \
-    .. && \
-    make nvinfer_plugin -j$(nproc) &&\
-    make nvonnxparser  -j$(nproc)  &&\
-    cp libnvinfer_plugin.so.8.2.3 /usr/lib/aarch64-linux-gnu/ && \
-    cp libnvonnxparser.so.8.2.3 /usr/lib/aarch64-linux-gnu/ && \
-    ldconfig && \
-    ln -s /lib/aarch64-linux-gnu/libnvonnxparser.so.8 /lib/aarch64-linux-gnu/libnvonnxparser.so && \
-    ldconfig && \
-    rm -rf /opt/TensorRT \
-    ;fi
-
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     apt-get install -y && \
     git clone --recurse-submodules -j8 https://github.com/zerollzeng/tiny-tensorrt.git && \
@@ -143,25 +116,24 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     -DBUILD_PYTHON=OFF \
     -DBUILD_SAMPLE=OFF \
     .. && make -j$(nproc) && \
-    make install && \
-    rm -rf tiny-tensorrt \
+    make install; \
+    rm -rf /opt/tiny-tensorrt \
     ;fi
 
 # https://onnxruntime.ai/docs/build/eps.html#tensorrt
-RUN git clone --branch v1.11.0 --recursive -j$(nproc) https://github.com/Microsoft/onnxruntime.git && \
+# onnxruntime cannot be built currently with "--use_tensorrt" flag. TODO: find a proper tenorrt + onnxruntime combination
+# at the moment please use the "tiny-tensorrt" library as wrapper
+RUN if [ ${ENABLE_CUDA} = "OFF" ]; then \
+    git clone --branch v1.11.0 --recursive -j$(nproc) https://github.com/Microsoft/onnxruntime.git && \
     cd onnxruntime && \
-    if [ ${ENABLE_CUDA} = "ON" ]; then \
-    ./build.sh --config Release --update --build --parallel \
-    --use_cuda --cuda_home /usr/local/cuda --cudnn_home /usr/lib/aarch64-linux-gnu --tensorrt_home /usr/lib/aarch64-linux-gnu --build_shared_lib \
-    ;else \
-    ./build.sh --config Release --build_shared_lib --parallel \
-    ;fi && \
+    ./build.sh --config Release --build_shared_lib --parallel && \
     cd build/Linux/Release && \
     make install && \
-    rm -rf /opt/onnxruntime
+    rm -rf /opt/onnxruntime \
+    ;fi
 
 # install librealsense from repo
-ENV REALSENSE_VERSION="2.50.0-0~realsense0*"
+ENV REALSENSE_VERSION="2.53.1-0~realsense0*"
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE && \
     echo "deb https://librealsense.intel.com/Debian/apt-repo bionic main" > /etc/apt/sources.list.d/librealsense-apt-source.list && \
@@ -172,7 +144,7 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A0
 # Source:
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
-ARG OPENCV_VERSION="4.4.0"
+ARG OPENCV_VERSION="4.7.0"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
