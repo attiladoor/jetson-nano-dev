@@ -90,7 +90,7 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     apt-get update  && \
     apt-get install -y g++-8 gcc-8 && \
-    apt-get install -y cuda-toolkit-10-2 libcudnn8-dev libnvinfer-dev libnvinfer-plugin-dev libnvparsers-dev && \
+    apt-get install -y cuda-toolkit-10-2 tensorrt &&\
     export CC="/usr/bin/gcc-8" && \
     export CXX="/usr/bin/g++-8" && \
     echo "CC=/usr/bin/gcc-8" >> /etc/environment && \
@@ -104,33 +104,6 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     /bin/sh -c echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/nvidia-tegra.conf && \
     echo "/usr/lib/aarch64-linux-gnu/tegra-egl" > /etc/ld.so.conf.d/nvidia-tegra-egl.conf && ldconfig \
-    ;fi
-
-#https://stackoverflow.com/questions/65605972/cmake-unsupported-gnu-version-gcc-versions-later-than-8-are-not-supported
-#https://github.com/NVIDIA-AI-IOT/deepstream_tao_apps/blob/master/TRT-OSS/Jetson/README.md
-# TODO: remove unnecessary export
-RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
-    export CC="/usr/bin/gcc-8" && \
-    export CXX="/usr/bin/g++-8" && \
-    apt-get update && apt-get install -y python zlib1g-dev build-essential && \
-    git clone --recurse-submodules -b release/8.2 https://github.com/nvidia/TensorRT TensorRT && \
-    cd TensorRT && \
-    cp parsers/onnx/NvOnnxParser.h /usr/include/aarch64-linux-gnu/ && \
-    mkdir build && cd build && \
-    cmake \
-    -DTRT_LIB_DIR=/usr/lib/aarch64-linux-gnu/ \
-    -DTRT_BIN_DIR=/opt/TensorRT/out \
-    -DCUDA_VERSION=10.2 \
-    -DGPU_ARCHS=53 \
-    .. && \
-    make nvinfer_plugin -j$(nproc) &&\
-    make nvonnxparser  -j$(nproc)  &&\
-    cp libnvinfer_plugin.so.8.2.3 /usr/lib/aarch64-linux-gnu/ && \
-    cp libnvonnxparser.so.8.2.3 /usr/lib/aarch64-linux-gnu/ && \
-    ldconfig && \
-    ln -s /lib/aarch64-linux-gnu/libnvonnxparser.so.8 /lib/aarch64-linux-gnu/libnvonnxparser.so && \
-    ldconfig && \
-    rm -rf /opt/TensorRT \
     ;fi
 
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
