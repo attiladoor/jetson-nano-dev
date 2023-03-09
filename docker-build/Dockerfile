@@ -133,7 +133,7 @@ RUN if [ ${ENABLE_CUDA} = "OFF" ]; then \
     ;fi
 
 # install librealsense from repo
-ENV REALSENSE_VERSION="2.50.0-0~realsense0*"
+ENV REALSENSE_VERSION="2.53.1-0~realsense0*"
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE && \
     echo "deb https://librealsense.intel.com/Debian/apt-repo bionic main" > /etc/apt/sources.list.d/librealsense-apt-source.list && \
