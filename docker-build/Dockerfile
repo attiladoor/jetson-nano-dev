@@ -147,7 +147,7 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A0
 # Source:
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
-ARG OPENCV_VERSION="4.4.0"
+ARG OPENCV_VERSION="4.7.0"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
