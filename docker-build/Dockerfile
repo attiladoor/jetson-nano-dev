@@ -116,24 +116,21 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     -DBUILD_PYTHON=OFF \
     -DBUILD_SAMPLE=OFF \
     .. && make -j$(nproc) && \
-    make install && \
-    rm -rf tiny-tensorrt \
+    make install; \
+    rm -rf /opt/tiny-tensorrt \
     ;fi
 
 # https://onnxruntime.ai/docs/build/eps.html#tensorrt
 # onnxruntime cannot be built currently with "--use_tensorrt" flag. TODO: find a proper tenorrt + onnxruntime combination
 # at the moment please use the "tiny-tensorrt" library as wrapper
-RUN git clone --branch v1.11.0 --recursive -j$(nproc) https://github.com/Microsoft/onnxruntime.git && \
+RUN if [ ${ENABLE_CUDA} = "OFF" ]; then \
+    git clone --branch v1.11.0 --recursive -j$(nproc) https://github.com/Microsoft/onnxruntime.git && \
     cd onnxruntime && \
-    if [ ${ENABLE_CUDA} = "ON" ]; then \
-    ./build.sh --config Release --update --build --parallel \
-    --use_cuda --cuda_home /usr/local/cuda --cudnn_home /usr/lib/aarch64-linux-gnu --tensorrt_home /usr/lib/aarch64-linux-gnu --build_shared_lib \
-    ;else \
-    ./build.sh --config Release --build_shared_lib --parallel \
-    ;fi && \
+    ./build.sh --config Release --build_shared_lib --parallel && \
     cd build/Linux/Release && \
     make install && \
-    rm -rf /opt/onnxruntime
+    rm -rf /opt/onnxruntime \
+    ;fi
 
 # install librealsense from repo
 ENV REALSENSE_VERSION="2.50.0-0~realsense0*"
