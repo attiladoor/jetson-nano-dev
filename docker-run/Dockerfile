@@ -27,3 +27,18 @@ RUN apt-get update && \
 RUN pip3 install pyrealsense2
 
 RUN pip3 install onnxruntime-gpu onnx
+
+# mayavi and GUI packages
+RUN apt-get -yqq install \
+    '^libxcb.*-dev' \
+    libx11-xcb-dev \
+    libglu1-mesa-dev \
+    libxrender-dev \
+    libxkbcommon-dev \
+    libxkbcommon-x11-dev
+
+RUN pip3 install --upgrade pip
+
+RUN pip3 install pyqt5
+
+RUN pip3 install mayavi
