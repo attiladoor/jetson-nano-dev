@@ -32,6 +32,27 @@ then
     ENABLE_CUDA="ON"
     DOCKER_FILE="docker-build/Dockerfile"
     VARIANT_TAG="-build"
+    JETPACK_RELEASE=r32.6
+    TEGRA_VERSION="t210"
+    ARM_DOCKER_PLATFORM="--platform=linux/arm64"
+
+elif [ $ARCH == "arm-orin" ]
+then
+    # https://developer.nvidia.com/embedded/jetson-linux-r362
+    # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/l4t-base/tags
+    if [ $UBUNTU_VERSION == "22" ]
+    then
+        BASE="nvcr.io/nvidia/l4t-base:r36.2.0"
+    else
+        echo "Wrong ubuntu version:" $UBUNTU_VERSION
+        exit 1
+    fi
+    ENABLE_CUDA="ON"
+    DOCKER_FILE="docker-build/Dockerfile"
+    VARIANT_TAG="-build"
+    JETPACK_RELEASE=r36.2
+    TEGRA_VERSION="t234"
+    ARM_DOCKER_PLATFORM="--platform=linux/arm64"
 elif [ $ARCH == "x86" ]
 then
     if [ $UBUNTU_VERSION == "18" ]
@@ -70,10 +91,12 @@ fi
 
 if [[ $DOCKER_COMMAND == "build" ]]
 then
-    docker buildx build  \
+    docker buildx build $ARM_DOCKER_PLATFORM \
         --build-arg BASE=$BASE \
         --build-arg ENABLE_CUDA=$ENABLE_CUDA \
         --build-arg ARCH=$ARCH \
+        --build-arg JETPACK_RELEASE=$JETPACK_RELEASE \
+        --build-arg TEGRA_VERSION=$TEGRA_VERSION \
         --tag $CONTAINER_BASE_NAME$ARCH-$UBUNTU_VERSION$VARIANT_TAG:$VERSION \
         --file $DOCKER_FILE .
 elif [[ $DOCKER_COMMAND == "push" ]]
