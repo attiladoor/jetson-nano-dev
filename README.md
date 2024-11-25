@@ -31,5 +31,6 @@ make build-all-20
 * https://hub.docker.com/r/attiladoor/jetson-nano-dev-arm-20-build
 * https://hub.docker.com/r/attiladoor/jetson-nano-dev-x86-20-build
 * https://hub.docker.com/r/attiladoor/jetson-nano-dev-x86-20-run
+* https://hub.docker.com/r/attiladoor/jetson-nano-dev-arm-orin-22-build
 
 See the corresponding release tags
