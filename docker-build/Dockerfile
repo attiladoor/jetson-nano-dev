@@ -37,12 +37,14 @@ RUN apt-get update && \
 
 
 ARG ENABLE_CUDA
+ARG JETPACK_RELEASE
+ARG TEGRA_VERSION
 
 # Source https://github.com/cptnalf/frigate_dockers/blob/ffccb8d13212d83c12055c4bba447889a4222c39/Dockerfile
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     apt-key adv --fetch-key https://repo.download.nvidia.com/jetson/jetson-ota-public.asc  && \
-    echo "deb https://repo.download.nvidia.com/jetson/common r32.6 main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
-    echo "deb https://repo.download.nvidia.com/jetson/t210 r32.6 main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
+    echo "deb https://repo.download.nvidia.com/jetson/common ${JETPACK_RELEASE} main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
+    echo "deb https://repo.download.nvidia.com/jetson/${TEGRA_VERSION} ${JETPACK_RELEASE} main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
     apt-get update && \
     wget http://http.us.debian.org/debian/pool/main/libf/libffi/libffi6_3.2.1-9_arm64.deb && \
     dpkg -i libffi6_3.2.1-9_arm64.deb && \
@@ -88,7 +90,8 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     ;fi
 
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
-    apt-get update  && \
+    if [ ${JETPACK_RELEASE} = "r32.6" ]; then \
+    apt-get update && \
     apt-get install -y g++-8 gcc-8 && \
     apt-get install -y cuda-toolkit-10-2 tensorrt &&\
     export CC="/usr/bin/gcc-8" && \
@@ -99,6 +102,13 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     ln -fs $CC /usr/bin/cc && \
     ln -fs $CXX /usr/bin/g++ && \
     ln -fs $CXX /usr/bin/c++ \
+    ;elif [ ${JETPACK_RELEASE} = "r36.2" ]; then \
+    apt-get update  && \
+    apt-get install -y cuda-toolkit-12-2 tensorrt nvidia-l4t-dla-compiler \
+    ;else \
+    echo "Invalid jetpack release ${JETPACK_RELEASE}" && \
+    exit -1 \
+    ;fi \
     ;fi
 
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
@@ -107,7 +117,6 @@ RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
     ;fi
 
 RUN if [ ${ENABLE_CUDA} = "ON" ]; then \
-    apt-get install -y && \
     git clone --recurse-submodules -j8 https://github.com/zerollzeng/tiny-tensorrt.git && \
     cd tiny-tensorrt && \
     mkdir build && cd build && \
@@ -132,19 +141,32 @@ RUN if [ ${ENABLE_CUDA} = "OFF" ]; then \
     rm -rf /opt/onnxruntime \
     ;fi
 
-# install librealsense from repo
-ENV REALSENSE_VERSION="2.53.1-0~realsense0*"
+# install librealsense from source - only static libs
+ARG REALSENSE_VERSION="v2.53.1-cpack"
+ARG ARCH
 
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE && \
-    echo "deb https://librealsense.intel.com/Debian/apt-repo bionic main" > /etc/apt/sources.list.d/librealsense-apt-source.list && \
-    apt-get update && \
-    apt-get install -y -f librealsense2=${REALSENSE_VERSION} librealsense2-dev=${REALSENSE_VERSION}
+RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attiladoor/librealsense && \
+    cd librealsense && mkdir build && cd build && \
+    cmake \
+    -DCMAKE_BUILD_TYPE=release \
+    -DBUILD_EXAMPLES=OFF \
+    -DBUILD_GRAPHICAL_EXAMPLES=OFF \
+    -DBUILD_WITH_CUDA=${ENABLE_CUDA} \
+    -DCMAKE_CUDA_ARCHITECTURES="53" \
+    -DFORCE_RSUSB_BACKEND=ON \
+    ../ && \
+    make -j$(nproc) && \
+    make install && \
+    cpack && \
+    cp librealsense2-0.1.1-Linux.deb /opt/librealsense2-${REALSENSE_VERSION}-${ARCH}.deb && \
+    cd /opt && \
+    rm -rf /opt/librealsense
 
-# Build and install OpenCV 4.4 - static library
+# Build and install OpenCV 4.10 - static library
 # Source:
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
-ARG OPENCV_VERSION="4.7.0"
+ARG OPENCV_VERSION="4.10.0"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -152,7 +174,7 @@ RUN apt-get update && \
     libatlas-base-dev \
     libavcodec-dev \
     libavformat-dev \
-    libavresample-dev \
+    libswresample-dev \
     libglew-dev \
     libgstreamer-plugins-base1.0-dev \
     libgstreamer-plugins-good1.0-dev \
@@ -183,7 +205,7 @@ RUN cd opencv && \
     -D BUILD_opencv_python3=ON \
     -D CMAKE_BUILD_TYPE=RELEASE \
     -D CMAKE_INSTALL_PREFIX=/usr/local \
-    -D CUDA_ARCH_BIN=5.3,6.2,7.2 \
+    -D CUDA_ARCH_BIN=5.3,6.2,7.2,8.7 \
     -D CUDA_ARCH_PTX= \
     -D WITH_CUDA=${ENABLE_CUDA} \
     -D CUDA_FAST_MATH=${ENABLE_CUDA} \

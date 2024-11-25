@@ -4,6 +4,8 @@ arm-18-build:
 	bash ./build.sh build arm 18 build
 arm-20-build:
 	bash ./build.sh build arm 20 build
+arm-orin-22-build:
+	bash ./build.sh build arm-orin 22 build
 x86-18-build:
 	bash ./build.sh build x86 18 build
 x86-20-build:
