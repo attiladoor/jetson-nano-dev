@@ -94,7 +94,7 @@ fi
 
 if [[ $DOCKER_COMMAND == "build" ]]
 then
-    docker buildx build $ARM_DOCKER_PLATFORM \
+    docker buildx  --debug build $ARM_DOCKER_PLATFORM \
         --build-arg BASE=$BASE \
         --build-arg ENABLE_CUDA=$ENABLE_CUDA \
         --build-arg ARCH=$ARCH \

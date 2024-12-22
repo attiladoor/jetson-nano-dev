@@ -45,4 +45,6 @@ RUN pip3 install --upgrade pip
 
 RUN pip3 install pyqt5
 
-RUN pip3 install mayavi
+#https://github.com/enthought/mayavi/issues/1325
+RUN pip3 install numpy==1.24.4 vtk==9.3.0
+RUN pip3 install mayavi --no-cache-dir --verbose  --no-build-isolation
