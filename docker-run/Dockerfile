@@ -20,7 +20,7 @@ RUN git clone https://github.com/google/googletest.git && \
     rm -rf googletest
 
 # install nodejs
-RUN wget -O - https://deb.nodesource.com/setup_17.x | bash && \
+RUN wget -O - https://deb.nodesource.com/setup_18.x | bash && \
     wget -O - https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
     apt-get update && \
