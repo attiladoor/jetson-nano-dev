@@ -18,11 +18,7 @@ then
     #     echo "Invalid positional parameter: ${VARIANT_OPT}"
     #     exit 1
     # fi
-
-    if [ $UBUNTU_VERSION == "18" ]
-    then
-        BASE="nvcr.io/nvidia/l4t-base:r32.6.1"
-    elif [ $UBUNTU_VERSION == "20" ]
+    if [ $UBUNTU_VERSION == "20" ]
     then
         BASE="arm64v8/ubuntu:20.04"
     else
@@ -53,12 +49,10 @@ then
     JETPACK_RELEASE=r36.2
     TEGRA_VERSION="t234"
     ARM_DOCKER_PLATFORM="--platform=linux/arm64"
+
 elif [ $ARCH == "x86" ]
 then
-    if [ $UBUNTU_VERSION == "18" ]
-    then
-        BASE="ubuntu:18.04"
-    elif [ $UBUNTU_VERSION == "20" ]
+    if [ $UBUNTU_VERSION == "20" ]
     then
         BASE="ubuntu:20.04"
     else
@@ -89,6 +83,15 @@ else
     exit 1
 fi
 
+
+if [ $UBUNTU_VERSION == "20" ]
+then
+    OPENCV_VERSION="4.7.0"
+elif [ $UBUNTU_VERSION == "22" ]
+then
+    OPENCV_VERSION="4.10.0"
+fi
+
 if [[ $DOCKER_COMMAND == "build" ]]
 then
     docker buildx build $ARM_DOCKER_PLATFORM \
@@ -97,6 +100,7 @@ then
         --build-arg ARCH=$ARCH \
         --build-arg JETPACK_RELEASE=$JETPACK_RELEASE \
         --build-arg TEGRA_VERSION=$TEGRA_VERSION \
+        --build-arg OPENCV_VERSION=$OPENCV_VERSION \
         --tag $CONTAINER_BASE_NAME$ARCH-$UBUNTU_VERSION$VARIANT_TAG:$VERSION \
         --file $DOCKER_FILE .
 elif [[ $DOCKER_COMMAND == "push" ]]

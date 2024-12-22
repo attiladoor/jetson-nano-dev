@@ -166,7 +166,7 @@ RUN git clone --depth 1 --branch ${REALSENSE_VERSION} https://github.com/attilad
 # Source:
 # OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
-ARG OPENCV_VERSION="4.10.0"
+ARG OPENCV_VERSION
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -195,7 +195,11 @@ RUN apt-get update && \
 RUN git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv.git && \
     git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv_contrib.git
 
-RUN cd opencv && \
+RUN export CUDA_ARCH_BIN="5.3,6.2,7.2" && \
+    if [ ${JETPACK_RELEASE} = "r36.2" ]; then \
+    export CUDA_ARCH_BIN=$CUDA_ARCH_BIN",8.7" \
+    ;fi && \
+    cd opencv && \
     mkdir build && \
     cd build && \
     cmake \
@@ -205,7 +209,7 @@ RUN cd opencv && \
     -D BUILD_opencv_python3=ON \
     -D CMAKE_BUILD_TYPE=RELEASE \
     -D CMAKE_INSTALL_PREFIX=/usr/local \
-    -D CUDA_ARCH_BIN=5.3,6.2,7.2,8.7 \
+    -D CUDA_ARCH_BIN=${CUDA_ARCH_BIN} \
     -D CUDA_ARCH_PTX= \
     -D WITH_CUDA=${ENABLE_CUDA} \
     -D CUDA_FAST_MATH=${ENABLE_CUDA} \
